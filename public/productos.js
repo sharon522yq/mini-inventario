@@ -1,6 +1,5 @@
-// Contrato asíncrono de datos. La interfaz no conoce localStorage.
-// Al migrar a Supabase, conservar listarProductos, crearProducto y editarProducto.
-const CLAVE = 'mini-inventario.productos.v1';
+import { obtenerCliente } from './supabase.js';
+
 const MAXIMO_INTEGER = 2147483647;
 
 export class ErrorProducto extends Error {
@@ -12,7 +11,7 @@ export class ErrorProducto extends Error {
   }
 }
 
-function validar(datos, productos = [], id) {
+function validar(datos) {
   const etiquetas = { nombre: 'Nombre', sku: 'SKU', cantidad: 'Cantidad', minimo: 'Cantidad mínima' };
   const errores = {};
   for (const campo of Object.keys(etiquetas)) {
@@ -24,9 +23,6 @@ function validar(datos, productos = [], id) {
   const sku = typeof datos.sku === 'string' ? datos.sku.trim() : '';
   if (!errores.nombre && !nombre) errores.nombre = 'Nombre: escribe el nombre del producto.';
   if (!errores.sku && !sku) errores.sku = 'SKU: escribe un código para el producto.';
-  if (!errores.sku && productos.some(producto => producto.id !== id && producto.sku.trim().toLowerCase() === sku.toLowerCase())) {
-    errores.sku = 'SKU: ya existe un producto con ese SKU.';
-  }
   const resultado = { nombre, sku };
   for (const [campo, etiqueta] of [['cantidad', 'Cantidad'], ['minimo', 'Cantidad mínima']]) {
     const valor = datos[campo];
@@ -44,63 +40,88 @@ function validar(datos, productos = [], id) {
   return resultado;
 }
 
-function leer() {
-  let contenido;
-  try {
-    contenido = localStorage.getItem(CLAVE);
-  } catch {
-    throw new ErrorProducto('No se puede acceder al almacenamiento del navegador. Comprueba su configuración e inténtalo de nuevo.');
-  }
-  if (contenido === null) return [];
-  try {
-    const productos = JSON.parse(contenido);
-    if (!Array.isArray(productos)) throw new Error('Formato inválido');
-    const ids = new Set();
-    const skus = new Set();
-    return productos.map(producto => {
-      const datos = validar(producto);
-      const sku = datos.sku.toLowerCase();
-      if (typeof producto.id !== 'string' || !producto.id || ids.has(producto.id) || skus.has(sku)) throw new Error('Producto inválido');
-      // Los productos de la primera versión no tenían fecha; se consideran anteriores a los nuevos.
-      if (producto.created_at === undefined) producto.created_at = '1970-01-01T00:00:00.000Z';
-      if (typeof producto.created_at !== 'string' || !Number.isFinite(Date.parse(producto.created_at))) throw new Error('Fecha inválida');
-      ids.add(producto.id);
-      skus.add(sku);
-      return { ...producto, ...datos };
+const COLUMNAS = 'id,user_id,nombre,sku,cantidad,minimo,created_at';
+
+function traducirError(error) {
+  if (error.code === '23505') {
+    return new ErrorProducto('SKU: ya existe un producto con ese SKU.', 'sku', {
+      sku: 'SKU: ya existe un producto con ese SKU.'
     });
-  } catch {
-    throw new ErrorProducto('No se pudieron leer los productos guardados. Los datos se conservan; revisa el almacenamiento antes de volver a guardar.');
   }
+  if (error.code === '23514') {
+    const reglas = {
+      productos_nombre_no_vacio: ['nombre', 'Nombre: este campo es obligatorio.'],
+      productos_sku_no_vacio: ['sku', 'SKU: este campo es obligatorio.'],
+      productos_cantidad_no_negativa: ['cantidad', 'Cantidad: introduce un entero igual o mayor que cero.'],
+      productos_minimo_no_negativo: ['minimo', 'Cantidad mínima: introduce un entero igual o mayor que cero.']
+    };
+    const regla = Object.entries(reglas).find(([nombre]) => error.message?.includes(nombre));
+    if (regla) {
+      const [campo, mensaje] = regla[1];
+      return new ErrorProducto(mensaje, campo, { [campo]: mensaje });
+    }
+  }
+  if (error.status === 401 || error.code === 'PGRST301' || error.code === 'PGRST303') {
+    const resultado = new ErrorProducto('Tu sesión expiró. Vuelve a iniciar sesión.');
+    resultado.sesionExpirada = true;
+    return resultado;
+  }
+  return new ErrorProducto('No se pudo completar la operación. Comprueba tu conexión e inténtalo de nuevo.');
 }
 
-function guardar(productos) {
-  try {
-    localStorage.setItem(CLAVE, JSON.stringify(productos));
-  } catch {
-    throw new ErrorProducto('No se pudo guardar. El almacenamiento puede estar lleno o bloqueado; tus cambios siguen en el formulario.');
+async function sesionActual(cliente) {
+  const { data, error } = await cliente.auth.getSession();
+  if (error || !data.session) {
+    const resultado = new ErrorProducto('Inicia sesión para consultar tu inventario.');
+    resultado.sesionExpirada = true;
+    throw resultado;
   }
+  return data.session;
+}
+
+export function crearRepositorioProductos(cliente) {
+  async function ejecutar(operacion) {
+    try { return await operacion(); }
+    catch (error) {
+      if (error instanceof ErrorProducto) throw error;
+      throw traducirError(error);
+    }
+  }
+  return {
+    listarProductos: () => ejecutar(async () => {
+      const sesion = await sesionActual(cliente);
+      const { data, error } = await cliente.from('productos').select(COLUMNAS)
+        .eq('user_id', sesion.user.id).order('created_at').order('id');
+      if (error) throw error;
+      return data;
+    }),
+    crearProducto: datos => ejecutar(async () => {
+      const campos = validar(datos);
+      await sesionActual(cliente);
+      const { data, error } = await cliente.from('productos').insert(campos).select(COLUMNAS).single();
+      if (error) throw error;
+      return data;
+    }),
+    editarProducto: (id, datos) => ejecutar(async () => {
+      const campos = validar(datos);
+      await sesionActual(cliente);
+      const { data, error } = await cliente.from('productos').update(campos).eq('id', id)
+        .select(COLUMNAS).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new ErrorProducto('El producto ya no está disponible. Actualiza el listado.');
+      return data;
+    })
+  };
 }
 
 export async function listarProductos() {
-  return leer().sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)
-    || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return crearRepositorioProductos(obtenerCliente()).listarProductos();
 }
 
 export async function crearProducto(datos) {
-  const productos = leer();
-  const campos = validar(datos, productos);
-  const producto = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...campos };
-  guardar([...productos, producto]);
-  return producto;
+  return crearRepositorioProductos(obtenerCliente()).crearProducto(datos);
 }
 
 export async function editarProducto(id, datos) {
-  const productos = leer();
-  const indice = productos.findIndex(producto => producto.id === id);
-  if (indice === -1) throw new ErrorProducto('El producto ya no está disponible. Actualiza el listado.');
-  const campos = validar(datos, productos, id);
-  const producto = { ...productos[indice], ...campos };
-  productos[indice] = producto;
-  guardar(productos);
-  return producto;
+  return crearRepositorioProductos(obtenerCliente()).editarProducto(id, datos);
 }

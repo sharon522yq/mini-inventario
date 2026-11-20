@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "22.x" },
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "node --test"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.119.2",
     "express": "^5.1.0"
   }
 }
