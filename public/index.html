@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f35">
+  <title>Mini Inventario</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="cabecera"><a class="marca" href="/" aria-label="Mini Inventario, inicio"><span class="icono" aria-hidden="true">▦</span> Mini Inventario</a><span class="etiqueta">Tu espacio de inventario</span></header>
+  <main>
+    <div class="introduccion"><p class="sobrelinea">TODO EN SU LUGAR</p><h1>Un inventario bajo control.</h1><p>Consulta tus existencias y descubre qué necesitas reponer.</p></div>
+    <div class="resumen" aria-label="Resumen del inventario"><div><span>Productos registrados</span><strong id="total">—</strong></div><div><span>Bajo mínimo</span><strong id="bajos">—</strong></div><p>Los productos se guardan en este navegador y dispositivo.</p></div>
+    <div class="distribucion">
+      <section class="panel inventario" aria-labelledby="titulo-inventario">
+        <div class="titulo-panel"><div><p class="sobrelinea">EXISTENCIAS</p><h2 id="titulo-inventario">Tus productos</h2></div><button id="actualizar" class="secundario" type="button">Actualizar</button></div>
+        <p id="error-listado" class="error" role="alert" hidden></p>
+        <p id="estado-listado" class="estado">Cargando productos…</p>
+        <div class="tabla-contenedor" id="tabla-contenedor" hidden>
+          <table><caption class="solo-lector">Productos y estado de existencias</caption><thead><tr><th scope="col">Producto / SKU</th><th scope="col">Cantidad</th><th scope="col">Mínimo</th><th scope="col">Estado</th><th scope="col"><span class="solo-lector">Acciones</span></th></tr></thead><tbody id="productos"></tbody></table>
+        </div>
+        <div class="nota"><span class="punto" aria-hidden="true"></span> Bajo mínimo: cantidad menor que el mínimo definido.</div>
+      </section>
+      <section class="panel formulario" aria-labelledby="titulo-formulario">
+        <p class="sobrelinea" id="modo-formulario">NUEVO PRODUCTO</p><h2 id="titulo-formulario">Agrega a tu inventario</h2><p class="ayuda">Completa los cuatro campos para guardar un producto.</p>
+        <form id="formulario" novalidate>
+          <label for="nombre">Nombre</label><input id="nombre" name="nombre" required placeholder="Ej. Cuaderno de notas" aria-describedby="error-nombre"><p id="error-nombre" class="error-campo" hidden></p>
+          <label for="sku">SKU</label><input id="sku" name="sku" required placeholder="Ej. CUA-001" aria-describedby="ayuda-sku error-sku"><small id="ayuda-sku">Un código único para cada producto.</small><p id="error-sku" class="error-campo" hidden></p>
+          <div class="cantidades"><div><label for="cantidad">Cantidad</label><input id="cantidad" name="cantidad" type="number" min="0" step="1" inputmode="numeric" required placeholder="0" aria-describedby="error-cantidad"><p id="error-cantidad" class="error-campo" hidden></p></div><div><label for="minimo">Cantidad mínima</label><input id="minimo" name="minimo" type="number" min="0" step="1" inputmode="numeric" required placeholder="0" aria-describedby="error-minimo"><p id="error-minimo" class="error-campo" hidden></p></div></div>
+          <p id="error-formulario" class="error" role="alert" hidden></p>
+          <button id="guardar" class="primario" type="submit">Agregar producto</button><button id="cancelar" class="secundario cancelar" type="button" hidden>Cancelar edición</button>
+        </form>
+      </section>
+    </div>
+    <p id="mensaje" class="mensaje" role="status" aria-live="polite"></p>
+    <footer>Mini Inventario <span>Menos pendientes. Más orden.</span></footer>
+  </main>
+</body>
+</html>
