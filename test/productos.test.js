@@ -24,6 +24,19 @@ test('inventario vacío, creación normalizada y lectura persistente', async () 
   assert.equal((await listarProductos())[0].nombre, 'Cuaderno');
 });
 
+test('la lectura normaliza cantidades guardadas como texto y calcula correctamente Bajo mínimo', async () => {
+  const producto = {
+    ...datos, id: 'producto-texto', nombre: ' Cuaderno ', sku: ' ABC-1 ',
+    cantidad: '10', minimo: '5', created_at: '2026-11-19T12:00:00.000Z'
+  };
+  const contenido = JSON.stringify([producto]);
+  almacen.set('mini-inventario.productos.v1', contenido);
+  const [leido] = await listarProductos();
+  assert.deepEqual(leido, { ...producto, nombre: 'Cuaderno', sku: 'ABC-1', cantidad: 10, minimo: 5 });
+  assert.equal(leido.cantidad < leido.minimo, false);
+  assert.equal(almacen.get('mini-inventario.productos.v1'), contenido);
+});
+
 test('cantidad y mínimo aceptan el máximo integer y rechazan el siguiente sin guardar', async () => {
   const producto = await crearProducto({ ...datos, cantidad: '2147483647', minimo: 2147483647 });
   for (const [campo, etiqueta] of [['cantidad', 'Cantidad'], ['minimo', 'Cantidad mínima']]) {

@@ -57,7 +57,7 @@ function leer() {
     if (!Array.isArray(productos)) throw new Error('Formato inválido');
     const ids = new Set();
     const skus = new Set();
-    for (const producto of productos) {
+    return productos.map(producto => {
       const datos = validar(producto);
       const sku = datos.sku.toLowerCase();
       if (typeof producto.id !== 'string' || !producto.id || ids.has(producto.id) || skus.has(sku)) throw new Error('Producto inválido');
@@ -66,8 +66,8 @@ function leer() {
       if (typeof producto.created_at !== 'string' || !Number.isFinite(Date.parse(producto.created_at))) throw new Error('Fecha inválida');
       ids.add(producto.id);
       skus.add(sku);
-    }
-    return productos;
+      return { ...producto, ...datos };
+    });
   } catch {
     throw new ErrorProducto('No se pudieron leer los productos guardados. Los datos se conservan; revisa el almacenamiento antes de volver a guardar.');
   }
