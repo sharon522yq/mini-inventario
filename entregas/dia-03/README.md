@@ -41,6 +41,7 @@ Pedí que explicara el plan antes de editar, pero Codex siguió trabajando sin e
 **Corrección 1 (mía):** con SKU duplicado y cantidad negativa solo aparecía un error. Pedí mostrar todos a la vez y resaltar los campos.
 
 **Corrección 2 (revisión acotada):** Codex encontró 3 diferencias con el diseño. Corregí dos: limitar las cantidades al máximo de `integer` de PostgreSQL (2147483647) y guardar `created_at` para ordenar por creación. Descarté la de concurrencia entre pestañas, porque solo aplica a localStorage, que mañana se reemplaza por Supabase.
+Corrección 3 (revisión del bot en el PR): el bot de Codex detectó que los productos guardados con cantidades como texto se comparaban como texto (“10” contra “5”) y se marcaban mal como “Bajo mínimo”. Pedí que leer() devuelva las cantidades como números y agregué una prueba.
 
 ## Contexto
 
