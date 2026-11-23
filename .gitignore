@@ -20,3 +20,12 @@ __pycache__/
 .mypy_cache/
 *.egg-info/
 build/
+
+.playwright-cli/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

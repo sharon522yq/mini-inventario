@@ -13,5 +13,9 @@
   "dependencies": {
     "@supabase/supabase-js": "2.119.2",
     "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6"
   }
 }
