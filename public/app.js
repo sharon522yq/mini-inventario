@@ -28,7 +28,7 @@ function limpiarErroresFormulario() {
 function dibujar() {
   const filas = document.createDocumentFragment();
   for (const producto of productos) {
-    const bajo = producto.cantidad > producto.minimo;
+    const bajo = producto.cantidad < producto.minimo;
     const fila = document.createElement('tr');
     const identidad = document.createElement('td');
     const nombre = document.createElement('strong');
