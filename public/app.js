@@ -38,9 +38,10 @@ function dibujar() {
     sku.textContent = producto.sku;
     identidad.append(nombre, sku);
     fila.append(identidad);
-    for (const valor of [producto.cantidad, producto.minimo]) {
+    for (const [etiqueta, valor] of [['Cantidad', producto.cantidad], ['Mínimo', producto.minimo]]) {
       const celda = document.createElement('td');
       celda.className = 'numero';
+      celda.setAttribute('data-etiqueta', etiqueta);
       celda.textContent = valor;
       fila.append(celda);
     }
