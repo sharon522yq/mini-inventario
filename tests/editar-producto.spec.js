@@ -26,12 +26,22 @@ test('edita un producto y conserva los cambios al recargar', async ({ page, prod
   await expect(fila.getByRole('cell', { name: '5', exact: true })).toBeVisible();
   await expect(fila.getByRole('cell', { name: 'Bajo mínimo', exact: true })).toBeVisible();
 
+  await fila.getByRole('button', { name: `Editar ${nombreEditado}`, exact: true }).click();
+  await expect(page.getByLabel('Cantidad', { exact: true })).toHaveValue('2');
+  await expect(page.getByLabel('Cantidad mínima', { exact: true })).toHaveValue('5');
+  await page.getByRole('button', { name: 'Cancelar edición', exact: true }).click();
+
   await page.reload();
   await expect(fila).toHaveCount(1);
   await expect(fila.getByRole('cell', { name: `${nombreEditado} ${producto.sku}`, exact: true })).toBeVisible();
   await expect(fila.getByRole('cell', { name: '2', exact: true })).toBeVisible();
   await expect(fila.getByRole('cell', { name: '5', exact: true })).toBeVisible();
   await expect(fila.getByRole('cell', { name: 'Bajo mínimo', exact: true })).toBeVisible();
+
+  await fila.getByRole('button', { name: `Editar ${nombreEditado}`, exact: true }).click();
+  await expect(page.getByLabel('Cantidad', { exact: true })).toHaveValue('2');
+  await expect(page.getByLabel('Cantidad mínima', { exact: true })).toHaveValue('5');
+  await page.getByRole('button', { name: 'Cancelar edición', exact: true }).click();
 });
 
 test('rechaza una cantidad negativa al editar y conserva el producto original', async ({ page, producto }) => {
@@ -58,4 +68,9 @@ test('rechaza una cantidad negativa al editar y conserva el producto original', 
   await expect(fila.getByRole('cell', { name: '7', exact: true })).toBeVisible();
   await expect(fila.getByRole('cell', { name: '3', exact: true })).toBeVisible();
   await expect(fila.getByRole('cell', { name: 'En orden', exact: true })).toBeVisible();
+
+  await fila.getByRole('button', { name: `Editar ${producto.nombre}`, exact: true }).click();
+  await expect(page.getByLabel('Cantidad', { exact: true })).toHaveValue('7');
+  await expect(page.getByLabel('Cantidad mínima', { exact: true })).toHaveValue('3');
+  await page.getByRole('button', { name: 'Cancelar edición', exact: true }).click();
 });
