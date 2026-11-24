@@ -1,0 +1,20 @@
+---
+name: pruebas-inventario
+description: Reglas para escribir o modificar pruebas de Playwright de Mini Inventario. Usar cuando se pida escribir, crear, agregar o corregir una prueba, un test o una prueba E2E de Playwright sobre productos, inventario, inicio de sesión, agregar, editar o eliminar productos, o el estado Bajo mínimo.
+---
+
+# Pruebas de Mini Inventario
+
+- Agrega las pruebas nuevas en `tests/` con Playwright y la configuración existente de `playwright.config.js`. No modifiques `tests/README.md` salvo que se pida.
+- Importa `test`, `expect`, `ingresar` y `agregar` desde `tests/fixtures.js` (desde un spec en `tests/`, usa `./fixtures.js`). Reutiliza `ingresar(page)` para autenticar y `agregar(page, producto, cantidad, minimo)` para altas válidas.
+- Lee las credenciales desde el entorno: `TEST_EMAIL`, `TEST_PASSWORD`, `SUPABASE_URL` y `SUPABASE_KEY`. La configuración existente admite cargarlas desde `.env`. No incrustes, imprimas ni subas credenciales o archivos `.env`; si faltan variables, informa sus nombres sin inventar valores.
+- Usa la fixture `producto` en cada prueba. Ya reserva un SKU único con prefijo `E2E-` y UUID, también para ejecuciones paralelas o reintentos. Conserva `producto.sku` para que la limpieza encuentre los datos creados; no uses SKU de productos ajenos.
+- La fixture limpia en `finally` cuando `producto.creacionIntentada` es verdadero. `agregar()` activa esa bandera antes de enviar el formulario. Si envías un alta directamente para probar un error, actívala antes de pulsar el botón, por si el alta se acepta inesperadamente. Reutiliza esa limpieza y no borres datos ajenos. Antes de ejecutar pruebas que creen y borren registros, verifica que exista aprobación explícita para la limpieza, como exige `AGENTS.md`; si falta, solicítala.
+- Selecciona campos mediante `getByLabel('Nombre', { exact: true })`, `getByLabel('SKU', { exact: true })`, `getByLabel('Cantidad', { exact: true })` y `getByLabel('Cantidad mínima', { exact: true })`.
+- Selecciona botones mediante `getByRole('button', { name: 'Agregar producto', exact: true })`, `getByRole('button', { name: 'Guardar cambios', exact: true })` y `getByRole('button', { name: `Editar ${producto.nombre}`, exact: true })`.
+- En las pruebas nuevas evita selectores CSS como `#id`, `.clase` y selecciones por posición como `locator('td').nth(...)`. Usa roles y etiquetas; para una fila, usa `getByRole('row').filter({ has: page.getByText(producto.sku, { exact: true }) })`. Comprueba celdas por rol y contenido accesible. Los selectores internos de los helpers existentes no justifican copiarlos a los specs ni requieren modificar esos helpers para este trabajo.
+- Cubre al menos un caso correcto y un caso de error del comportamiento solicitado, con aserciones sobre el resultado visible y la validación correspondiente. Ejemplos correctos: alta persistente tras recargar o edición de cantidad. Ejemplos de error: SKU duplicado, campo vacío, cantidad negativa o contraseña incorrecta.
+- Para SKU duplicado, crea primero el producto con `agregar()` y vuelve a enviar su mismo SKU dentro de esa prueba; comprueba el rechazo y que solo exista una fila. La reutilización intencional del SKU se limita a esa prueba.
+- Para campo vacío o cantidad negativa, completa el formulario por etiquetas y pulsa `Agregar producto` directamente: `agregar()` espera una petición POST y no sirve si la validación impide enviarla. Verifica el error o la invalidez del campo y que no se cree ninguna fila con el SKU reservado.
+- Para contraseña incorrecta, reutiliza `ingresar(page, passwordIncorrecta)` y comprueba el mensaje `Correo o contraseña incorrectos.` y que no se acceda al inventario. No expongas la contraseña real.
+- Ejecuta las pruebas fuera del sandbox porque necesitan red. Solicita la ejecución con permisos elevados mediante `sandbox_permissions: "require_escalated"`; por ejemplo, `npx playwright test tests/nueva-prueba.spec.js`. Respeta también la aprobación de limpieza antes de ejecutar. Reporta el resultado y cualquier fallo de limpieza; no declares éxito si quedan registros sin confirmar.
