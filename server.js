@@ -50,5 +50,5 @@ export const app = crearApp();
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const port = process.env.PORT || 3000;
-  app.listen(port, () => console.log(`Mini Inventario disponible en http://localhost:${port}`));
+  app.listen(port, '0.0.0.0', () => console.log(`Mini Inventario disponible en http://localhost:${port}`));
 }
