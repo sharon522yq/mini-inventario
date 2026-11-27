@@ -83,7 +83,7 @@ codex mcp add inventario -- "C:\Users\sharo\proyectos\mini-inventario\.venv\Scri
 | Herramientas disponibles | 16 | 2 |
 | Herramientas usadas | `execute_sql` (falló una vez por conexión), `list_tables`, `execute_sql` | `stock_bajo` |
 | Llamadas | 3 | 1 |
-| Tiempo | 1 min 13 s | (ver captura) |
+| Tiempo | 1 min 13 s |  
 | Respuesta | Clavos, 5 de 20, faltan 15 | Clavos, 5 de 20, faltan 15 |
 | Cómo responde | Descubre la tabla y escribe su propio SQL | Usa una consulta ya escrita y revisada |
 
